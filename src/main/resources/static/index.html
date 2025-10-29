@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        input, button { margin: 5px; }
+        .low-stock { background-color: #ffcccc; }
+    </style>
+</head>
+<body>
+
+<h2>Inventory Management</h2>
+
+
+<div>
+    <h3>Add Item</h3>
+    Name: <input type="text" id="itemName">
+    Category: <input type="text" id="itemCategory">
+    Quantity: <input type="number" id="itemQuantity">
+    <button onclick="addItem()">Add</button>
+</div>
+
+<div>
+    <h3>Search Items</h3>
+    Name: <input type="text" id="searchName" oninput="fetchItems()">
+    Category: <input type="text" id="searchCategory" oninput="fetchItems()">
+</div>
+
+<div>
+    <h3>Inventory</h3>
+    <table id="inventoryTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    const API_URL = '/api/items';
+    const LOW_STOCK_THRESHOLD = 5;
+
+    async function fetchItems() {
+        const nameFilter = document.getElementById('searchName').value.toLowerCase();
+        const categoryFilter = document.getElementById('searchCategory').value.toLowerCase();
+
+        const res = await fetch(API_URL);
+        let items = await res.json();
+
+        items = items.filter(item =>
+            item.name.toLowerCase().includes(nameFilter) &&
+            item.category.toLowerCase().includes(categoryFilter)
+        );
+
+        const tbody = document.querySelector('#inventoryTable tbody');
+        tbody.innerHTML = '';
+
+        items.forEach(item => {
+            const row = document.createElement('tr');
+            if (item.quantity < LOW_STOCK_THRESHOLD) row.classList.add('low-stock');
+
+            row.innerHTML = `
+            <td>${item.id}</td>
+            <td>${item.name}</td>
+            <td>${item.category}</td>
+            <td>${item.quantity}</td>
+            <td>
+                <button onclick="updateStock(${item.id}, 1)">+1</button>
+                <button onclick="updateStock(${item.id}, -1)">-1</button>
+                <button onclick="deleteItem(${item.id})">Delete</button>
+            </td>
+        `;
+            tbody.appendChild(row);
+        });
+    }
+
+    async function addItem() {
+        const name = document.getElementById('itemName').value;
+        const category = document.getElementById('itemCategory').value;
+        const quantity = parseInt(document.getElementById('itemQuantity').value);
+
+        if (!name || !category || isNaN(quantity)) {
+            alert('Please fill all fields.');
+            return;
+        }
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, category, quantity })
+        });
+
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemCategory').value = '';
+        document.getElementById('itemQuantity').value = '';
+        fetchItems();
+    }
+
+    async function deleteItem(id) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        fetchItems();
+    }
+
+    // Update stock (+1 or -1)
+    async function updateStock(id, amount) {
+        await fetch(`${API_URL}/${id}/decrease?amount=${-amount}`, { method: 'PATCH' });
+        if (amount > 0) {
+            // Increase stock endpoint
+            await fetch(`${API_URL}/${id}/increase?amount=${amount}`, { method: 'PATCH' });
+        }
+        fetchItems();
+    }
+
+    fetchItems();
+</script>
+
+</body>
+</html>
