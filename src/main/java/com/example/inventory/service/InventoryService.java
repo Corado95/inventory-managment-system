@@ -10,7 +10,7 @@ import java.util.List;
 public class InventoryService {
 
     private final ItemRepository itemRepository;
-    private final EmailService emailService; // inject email service here
+    private final EmailService emailService; //
     private final int LOW_STOCK_THRESHOLD = 5;
 
     public InventoryService(ItemRepository itemRepository, EmailService emailService) {
@@ -18,7 +18,7 @@ public class InventoryService {
         this.emailService = emailService;
     }
 
-    // real-time alert
+
     public void checkAndSendLowStock(Item item) {
         if (item.getQuantity() < LOW_STOCK_THRESHOLD) {
             String subject = "Low Stock Alert: " + item.getName();
@@ -29,7 +29,7 @@ public class InventoryService {
     }
 
 
-    // for scheduler
+
     public List<Item> getLowStockItems(int threshold) {
         return itemRepository.findAll().stream()
                 .filter(i -> i.getQuantity() < threshold)
