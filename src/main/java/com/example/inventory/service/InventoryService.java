@@ -5,9 +5,10 @@ import com.example.inventory.repository.ItemRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class InventoryService {
+public class InventoryService implements IInventoryService  {
 
     private final ItemRepository itemRepository;
     private final EmailService emailService; //
@@ -29,6 +30,45 @@ public class InventoryService {
     }
 
 
+    @Override
+    public List<Item> getAllItems() {
+        return List.of();
+    }
+
+    @Override
+    public Optional<Item> getItemById(Long id) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Item addItem(Item item) {
+        return null;
+    }
+
+    @Override
+    public Item updateItem(Long id, Item updatedItem) {
+        return null;
+    }
+
+    @Override
+    public void deleteItem(Long id) {
+
+    }
+
+    @Override
+    public Item increaseStock(Long id) {
+        return null;
+    }
+
+    @Override
+    public Item decreaseStock(Long id) {
+        return null;
+    }
+
+    @Override
+    public List<Item> searchItems(String name, String category) {
+        return List.of();
+    }
 
     public List<Item> getLowStockItems(int threshold) {
         return itemRepository.findAll().stream()

@@ -4,22 +4,26 @@ import com.example.inventory.model.Item;
 import com.example.inventory.repository.ItemRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.inventory.service.InventoryService;
+import com.example.inventory.service.IInventoryService;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/items")
+
+
 public class ItemController {
 
     private final ItemRepository itemRepository;
-    private final InventoryService inventoryService;
+    private final IInventoryService inventoryService;
+    ;
 
-    public ItemController(ItemRepository itemRepository, InventoryService inventoryService) {
+    public ItemController(ItemRepository itemRepository, IInventoryService inventoryService) {
         this.itemRepository = itemRepository;
         this.inventoryService = inventoryService;
     }
+
 
 
     @GetMapping
