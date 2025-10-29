@@ -34,7 +34,7 @@ class InventoryServiceTest {
         Mockito.when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         Mockito.when(itemRepository.save(ArgumentMatchers.any(Item.class))).thenReturn(item);
 
-        Item updated = inventoryService.increaseStock(1L);
+        Item updated = inventoryService.increaseStock(1L, 6);
 
         Assertions.assertEquals(6, updated.getQuantity());
         Mockito.verify(itemRepository).save(item);
@@ -49,7 +49,7 @@ class InventoryServiceTest {
         Mockito.when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         Mockito.when(itemRepository.save(ArgumentMatchers.any(Item.class))).thenReturn(item);
 
-        Item updated = inventoryService.decreaseStock(1L);
+        Item updated = inventoryService.decreaseStock(1L, 6);
 
         Assertions.assertEquals(4, updated.getQuantity());
         Mockito.verify(itemRepository).save(item);

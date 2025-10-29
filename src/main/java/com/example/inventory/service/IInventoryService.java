@@ -9,10 +9,8 @@ public interface IInventoryService {
     Optional<Item> getItemById(Long id);
     Item addItem(Item item);
     Item updateItem(Long id, Item updatedItem);
-    void deleteItem(Long id);
-    Item increaseStock(Long id);
-    Item decreaseStock(Long id);
+    boolean deleteItem(Long id);
+    Item increaseStock(Long id, int amount);
+    Item decreaseStock(Long id, int amount);
     List<Item> searchItems(String name, String category);
-    List<Item> getLowStockItems(int threshold);
-    void checkAndSendLowStock(Item item);
 }

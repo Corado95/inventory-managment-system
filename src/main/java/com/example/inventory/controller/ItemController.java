@@ -1,120 +1,83 @@
 package com.example.inventory.controller;
 
 import com.example.inventory.model.Item;
-import com.example.inventory.repository.ItemRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.inventory.service.IInventoryService;
 
 import java.util.List;
-import java.util.Optional;
+
 
 @RestController
 @RequestMapping("/api/items")
-
-
 public class ItemController {
 
-    private final ItemRepository itemRepository;
     private final IInventoryService inventoryService;
-    ;
 
-    public ItemController(ItemRepository itemRepository, IInventoryService inventoryService) {
-        this.itemRepository = itemRepository;
+    public ItemController(IInventoryService inventoryService) {
         this.inventoryService = inventoryService;
     }
 
-
-
     @GetMapping
     public List<Item> getAllItems() {
-        return itemRepository.findAll();
+        return inventoryService.getAllItems();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Item> getItemById(@PathVariable Long id) {
+        return inventoryService.getItemById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     @PostMapping
-    public Item addItem(@RequestBody Item item) {
-        return itemRepository.save(item);
+    public ResponseEntity<Item> addItem(@RequestBody Item item) {
+        Item saved = inventoryService.addItem(item);
+        return ResponseEntity.ok(saved);
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<Item> updateItem(@PathVariable Long id, @RequestBody Item updatedItem) {
-        Optional<Item> optionalItem = itemRepository.findById(id);
-
-        if (optionalItem.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Item existingItem = optionalItem.get();
-        existingItem.setName(updatedItem.getName());
-        existingItem.setQuantity(updatedItem.getQuantity());
-        existingItem.setPrice(updatedItem.getPrice());
-
-        itemRepository.save(existingItem);
-
-        return ResponseEntity.ok(existingItem);
+        Item updated = inventoryService.updateItem(id, updatedItem);
+        if (updated == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(updated);
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
-        if (!itemRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        itemRepository.deleteById(id);
+        boolean existed = inventoryService.deleteItem(id);
+        if (!existed) return ResponseEntity.notFound().build();
         return ResponseEntity.noContent().build();
     }
 
-    // 🔍 Search by name
+    // Search endpoints
     @GetMapping("/search/name")
     public List<Item> searchByName(@RequestParam String name) {
-        return itemRepository.findByNameContainingIgnoreCase(name);
+        return inventoryService.searchItems(name, null);
     }
 
-    // 🔍 Search by category
     @GetMapping("/search/category")
     public List<Item> searchByCategory(@RequestParam String category) {
-        return itemRepository.findByCategoryContainingIgnoreCase(category);
+        return inventoryService.searchItems(null, category);
     }
 
-
-    // 🟩 Increase stock
+    // Increase / decrease with amount
     @PatchMapping("/{id}/increase")
     public ResponseEntity<Item> increaseStock(@PathVariable Long id, @RequestParam int amount) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    item.setQuantity(item.getQuantity() + amount);
-                    return ResponseEntity.ok(itemRepository.save(item));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Item item = inventoryService.increaseStock(id, amount);
+        if (item == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(item);
     }
 
     @PatchMapping("/{id}/decrease")
     public ResponseEntity<?> decreaseStock(@PathVariable Long id, @RequestParam int amount) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    if (item.getQuantity() < amount) {
-                        return ResponseEntity
-                                .badRequest()
-                                .body("Not enough stock available. Current stock: " + item.getQuantity());
-                    }
-
-                    item.setQuantity(item.getQuantity() - amount);
-                    Item updatedItem = itemRepository.save(item);
-
-                    // 🔔 Check low stock immediately after decrease
-                    inventoryService.checkAndSendLowStock(updatedItem);
-
-                    return ResponseEntity.ok(updatedItem);
-                })
-                .orElseGet(() -> ResponseEntity
-                        .status(404)
-                        .body("Item with id " + id + " not found"));
+        try {
+            Item updated = inventoryService.decreaseStock(id, amount);
+            if (updated == null) return ResponseEntity.status(404).body("Item with id " + id + " not found");
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-
-
-
-
 }
+
